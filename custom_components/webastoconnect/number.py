@@ -104,7 +104,7 @@ class WebastoConnectNumber(WebastoBaseEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Set new value."""
         LOGGER.debug("Setting '%s' to '%s'", self.entity_id, value)
-        await self.coordinator.async_execute_cloud_call(
+        await self.coordinator.async_execute_command(
             self.entity_description.set_fn,  # type: ignore[arg-type]
             self._cloud,
             self._device,

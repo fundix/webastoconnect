@@ -283,7 +283,11 @@ async def _async_setup(
         # connect() already hydrated device state, avoid an immediate duplicate update call.
         coordinator.async_set_updated_data(None)
     else:
-        await coordinator.async_config_entry_first_refresh()
+        try:
+            await coordinator.async_config_entry_first_refresh()
+        except Exception:
+            await coordinator.cloud.close()
+            raise
 
     for id, device in coordinator.cloud.devices.items():
         device_name = webasto_device_name(device, webapi_device_names.get(str(id)))
@@ -364,5 +368,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: WebastoConfigEntry) -> 
 
 async def async_reload_entry(hass: HomeAssistant, entry: WebastoConfigEntry) -> None:
     """Reload config entry."""
-    await async_unload_entry(hass, entry)
-    await async_setup_entry(hass, entry)
+    await hass.config_entries.async_reload(entry.entry_id)

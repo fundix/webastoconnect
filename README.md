@@ -15,11 +15,10 @@ Webasto <b>DOES NOT</b> provide any public API or documentation for it, so I can
 
 # Installation:
 
-### Option 1 (easy) - HACS:
+### Option 1 (easy) - Marketplace (Home Assistant 2026.11+):
 
-- Ensure that HACS is installed.
-- Search for and install the "Webasto Connect" integration.
-- Restart Home Assistant.
+- Go to Settings > Marketplace > Add from link.
+- Enter `https://github.com/fundix/webastoconnect` and install.
 
 ### Option 2 - Manual installation:
 
@@ -37,6 +36,10 @@ Or go to Home Assistant > Settings > Integrations
 Add "Webasto Connect (ThermoConnect)" integration *(If it doesn't appear, try a hard refresh with Ctrl+F5.)*
 
 Enter your Webasto account email and password
+
+## Heating / ventilation mode
+
+The `Ventilation Mode` switch selects what the main `Output` switch starts: off = heating, on = ventilation (same as the mode toggle in the ThermoConnect app). Change the mode first, then turn on `Output`.
 
 # Known Issues
 

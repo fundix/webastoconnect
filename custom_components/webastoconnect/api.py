@@ -11,7 +11,7 @@ from typing import Any, TypeVar
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pywebasto import WebastoConnect
 from pywebasto.exceptions import InvalidRequestException, UnauthorizedException
@@ -117,6 +117,31 @@ class WebastoConnectUpdateCoordinator(DataUpdateCoordinator[None]):
         """Serialize cloud operations to avoid device context races."""
         async with self._cloud_operation_lock:
             return await cloud_call(*args, **kwargs)
+
+    async def async_execute_command(
+        self,
+        cloud_call: Callable[..., Awaitable[_T]],
+        *args: Any,
+        **kwargs: Any,
+    ) -> _T:
+        """Run a user-triggered cloud command and surface failures to the UI."""
+        try:
+            return await self.async_execute_cloud_call(cloud_call, *args, **kwargs)
+        except UnauthorizedException as err:
+            self.config_entry.async_start_reauth(self.hass)
+            raise HomeAssistantError(
+                "Authentication with Webasto failed, please re-authenticate"
+            ) from err
+        except TooManyRequestsException as err:
+            raise HomeAssistantError(
+                f"Webasto API rate limited, try again later: {err}"
+            ) from err
+        except (
+            InvalidRequestException,
+            ForbiddenException,
+            InvalidResponseException,
+        ) as err:
+            raise HomeAssistantError(f"Webasto command failed: {err}") from err
 
     async def _async_update_data(self) -> datetime | None:
         """Handle data update request from the coordinator."""

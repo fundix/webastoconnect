@@ -5,7 +5,6 @@ from typing import Any, cast
 
 from homeassistant.components import switch
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.const import EntityCategory
 from homeassistant.core import callback
 from homeassistant.util import slugify as util_slugify
 
@@ -28,10 +27,10 @@ SWITCHES = [
     WebastoConnectSwitchEntityDescription(
         key="ventilation_mode",
         name="Ventilation Mode",
-        entity_category=EntityCategory.CONFIG,
+        entity_category=None,
         value_fn=lambda webasto: cast(bool, webasto.is_ventilation),
         command_fn=lambda webasto, id, state: webasto.ventilation_mode(id, state),
-        entity_registry_enabled_default=False,
+        entity_registry_enabled_default=True,
     ),
     WebastoConnectSwitchEntityDescription(
         key="aux1_output",
@@ -132,7 +131,7 @@ class WebastoConnectSwitch(WebastoBaseEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch."""
         LOGGER.debug("Turning on %s", self.entity_id)
-        await self.coordinator.async_execute_cloud_call(
+        await self.coordinator.async_execute_command(
             self.entity_description.command_fn,  # type: ignore[arg-type]
             self._cloud,
             self._cloud.devices[self._device_id],
@@ -143,7 +142,7 @@ class WebastoConnectSwitch(WebastoBaseEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
         LOGGER.debug("Turning off %s", self.entity_id)
-        await self.coordinator.async_execute_cloud_call(
+        await self.coordinator.async_execute_command(
             self.entity_description.command_fn,  # type: ignore[arg-type]
             self._cloud,
             self._cloud.devices[self._device_id],
