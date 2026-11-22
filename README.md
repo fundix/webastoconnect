@@ -41,6 +41,8 @@ Enter your Webasto account email and password
 
 The `Ventilation Mode` switch selects what the main `Output` switch starts: off = heating, on = ventilation (same as the mode toggle in the ThermoConnect app). Change the mode first, then turn on `Output`.
 
+`Heater run time` and `Ventilation run time` set how long the heater/ventilation runs when started from Home Assistant (in minutes, same as the run time setting in the ThermoConnect app).
+
 # Known Issues
 
 ## My heater doesn't show up

@@ -5,8 +5,10 @@ from typing import cast
 
 from homeassistant.components import number
 from homeassistant.components.number import NumberEntity
-from homeassistant.const import EntityCategory
+from homeassistant.const import EntityCategory, UnitOfTime
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util import slugify as util_slugify
+from pywebasto import WebastoConnect, WebastoDevice
 
 from . import WebastoConfigEntry
 from .api import WebastoConnectUpdateCoordinator
@@ -45,7 +47,66 @@ NUMBERS = [
         entity_registry_enabled_default=False,
         icon="mdi:thermometer-alert",
     ),
+    WebastoConnectNumberEntityDescription(
+        key="heater_run_time",
+        name="Heater run time",
+        entity_category=None,
+        value_fn=lambda webasto: _seconds_to_minutes(webasto.timeout_heat),
+        set_fn=lambda webasto, device, state: _set_main_timeout(
+            webasto, device, heater=state
+        ),
+        native_min_value=1,
+        native_max_value=240,
+        native_step=1,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        entity_registry_enabled_default=True,
+        icon="mdi:radiator",
+    ),
+    WebastoConnectNumberEntityDescription(
+        key="ventilation_run_time",
+        name="Ventilation run time",
+        entity_category=None,
+        value_fn=lambda webasto: _seconds_to_minutes(webasto.timeout_vent),
+        set_fn=lambda webasto, device, state: _set_main_timeout(
+            webasto, device, ventilation=state
+        ),
+        native_min_value=1,
+        native_max_value=240,
+        native_step=1,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        entity_registry_enabled_default=True,
+        icon="mdi:fan-clock",
+    ),
 ]
+
+
+def _seconds_to_minutes(seconds: int | None) -> int | None:
+    """Convert a Webasto timeout in seconds to minutes."""
+    if not seconds:
+        return None
+    return int(seconds) // 60
+
+
+async def _set_main_timeout(
+    webasto: WebastoConnect,
+    device: WebastoDevice,
+    heater: float | None = None,
+    ventilation: float | None = None,
+) -> None:
+    """Set heater/ventilation run time in minutes.
+
+    pywebasto always writes both timeouts, so refuse when the other one is
+    unknown instead of silently resetting it to 0.
+    """
+    if not device.timeout_heat or not device.timeout_vent:
+        raise HomeAssistantError(
+            "Current run times are not known yet, try again after the next update"
+        )
+    await webasto.set_main_timeout(
+        device,
+        heater=int(heater * 60) if heater is not None else None,
+        ventilation=int(ventilation * 60) if ventilation is not None else None,
+    )
 
 
 async def async_setup_entry(hass, entry: WebastoConfigEntry, async_add_devices):
